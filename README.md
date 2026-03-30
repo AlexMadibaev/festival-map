@@ -5,11 +5,9 @@
 ## Структура
 
 - `index.html` — основной single-file интерфейс карты
-- `.github/workflows/deploy-pages.yml` — деплой на GitHub Pages через GitHub Actions
-
 ## Публикация
 
-После пуша ветки `main` workflow автоматически задеплоит сайт на GitHub Pages.
+Сайт публикуется через GitHub Pages напрямую из ветки `main` и корня репозитория.
 
 ## Важное ограничение
 

@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "maps": {
+      "festival-map": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    }
+  }
+}

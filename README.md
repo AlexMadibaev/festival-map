@@ -5,9 +5,25 @@
 ## Структура
 
 - `index.html` — основной single-file интерфейс карты
+- `realtime-config.js` — конфиг для live-sync через Firebase Realtime Database
+- `firebase.rules.example.json` — пример Firebase Rules
+
 ## Публикация
 
 Сайт публикуется через GitHub Pages напрямую из ветки `main` и корня репозитория.
+
+## Live-редактирование
+
+Чтобы изменения администратора прилетали всем пользователям в реальном времени:
+
+1. Создай Firebase-проект.
+2. Включи Firebase Realtime Database.
+3. Включи Firebase Authentication с провайдером Email/Password.
+4. Подставь `firebaseConfig` и `databasePath` в `realtime-config.js`.
+5. Поставь `enabled: true`.
+6. Примени правила из `firebase.rules.example.json`.
+
+После этого публичная карта будет слушать удалённые обновления, а администратор сможет публиковать текущую карту через скрытую админку.
 
 ## Важное ограничение
 

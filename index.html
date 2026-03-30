@@ -365,6 +365,25 @@
 
       <section class="section" data-section="data">
         <div class="sheet">
+          <div class="field-grid">
+            <div class="field">
+              <label>Live sync</label>
+              <div class="status-line">
+                <span class="badge" id="realtimeBadge">Live sync выключен</span>
+                <span id="realtimeStatusText">Сейчас карта работает как локальная версия в браузере.</span>
+              </div>
+            </div>
+            <div class="quick-grid">
+              <button class="btn btn-ghost" id="realtimeConnect" type="button">Подключить live-sync</button>
+              <button class="btn btn-success" id="realtimePublish" type="button">Опубликовать текущую карту</button>
+            </div>
+            <div class="status-line" id="realtimeHint">
+              Для настоящего real-time нужен Firebase Realtime Database. Когда дашь конфиг проекта, эта карта начнет обновляться у всех открытых пользователей сразу.
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet">
           <textarea class="json" id="configEditor" spellcheck="false"></textarea>
           <div class="quick-grid">
             <button class="btn btn-ghost" id="refreshJson" type="button">Обновить JSON</button>
@@ -383,10 +402,12 @@
   <input id="logoUpload" type="file" accept="image/*" hidden />
   <input id="mapUpload" type="file" accept="image/*" hidden />
   <input id="jsonUpload" type="file" accept="application/json,.json" hidden />
+  <script src="./realtime-config.js"></script>
 
   <script>
     const STORAGE_KEY = "festival-map-studio-v2";
     const ADMIN_PASSWORD_PLACEHOLDER = "admin1304";
+    const REALTIME_CONFIG = window.MAP_REALTIME_CONFIG || { enabled: false };
     const DEFAULT_CONFIG = {
       title: "Festival Grounds",
       subtitle: "Навигация по площадке для гостей фестиваля.",
@@ -421,6 +442,12 @@
       adminUnlocked: false,
       secretTapCount: 0,
       secretTapTimer: null,
+      realtimeConfigured: Boolean(REALTIME_CONFIG.enabled),
+      realtimeConnected: false,
+      realtimeAuthReady: false,
+      realtimeApplying: false,
+      realtimeInitialized: false,
+      realtimeMessage: "Сейчас карта работает как локальная версия в браузере.",
       savedLabel: "Не сохранено",
       storageWarning: "",
       mapReady: false
@@ -505,6 +532,11 @@
       savePoint: $("savePoint"),
       centerPoint: $("centerPoint"),
       configEditor: $("configEditor"),
+      realtimeBadge: $("realtimeBadge"),
+      realtimeStatusText: $("realtimeStatusText"),
+      realtimeConnect: $("realtimeConnect"),
+      realtimePublish: $("realtimePublish"),
+      realtimeHint: $("realtimeHint"),
       refreshJson: $("refreshJson"),
       applyJson: $("applyJson"),
       copyJson: $("copyJson"),
@@ -583,7 +615,158 @@
         return normalizeConfig(DEFAULT_CONFIG);
       }
     }
-    function persist() {
+    const liveSync = {
+      sessionId: (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function")
+        ? globalThis.crypto.randomUUID()
+        : `session-${Date.now()}`,
+      enabled: Boolean(REALTIME_CONFIG.enabled),
+      initialized: false,
+      connected: false,
+      authReady: false,
+      applyingRemote: false,
+      firebaseApp: null,
+      auth: null,
+      database: null,
+      dataRef: null,
+      signInWithEmailAndPassword: null,
+      signOut: null,
+      set: null,
+      get: null
+    };
+    function sanitizeLivePayload(raw) {
+      const normalized = normalizeConfig(raw);
+      return {
+        ...normalized,
+        _sync: {
+          updatedAt: Date.now(),
+          updatedBy: liveSync.sessionId
+        }
+      };
+    }
+    function applyConfigObject(nextConfig, options = {}) {
+      const normalized = normalizeConfig(nextConfig);
+      Object.keys(CONFIG).forEach((key) => delete CONFIG[key]);
+      Object.assign(CONFIG, normalized);
+      state.selectedPointId = CONFIG.points.find((point) => point.id === state.selectedPointId)?.id || CONFIG.points[0]?.id || null;
+      state.currentZoom = clamp(Number(CONFIG.initialZoom ?? 1), Number(CONFIG.minZoom ?? 0.8), Number(CONFIG.maxZoom ?? 2.4));
+      state.addMode = false;
+      state.moveMode = false;
+      if (!options.skipLocalPersist) persistLocal();
+      renderAll();
+    }
+    async function promptRealtimeSignIn() {
+      if (!liveSync.enabled) return false;
+      if (liveSync.authReady) return true;
+      if (!liveSync.signInWithEmailAndPassword || !liveSync.auth) return false;
+      const email = window.prompt("Firebase admin email");
+      if (!email) return false;
+      const password = window.prompt("Firebase admin password");
+      if (!password) return false;
+      try {
+        await liveSync.signInWithEmailAndPassword(liveSync.auth, email.trim(), password);
+        liveSync.authReady = true;
+        state.realtimeAuthReady = true;
+        state.realtimeMessage = "Firebase admin-подключение активно. Следующие правки будут улетать всем открытым картам сразу.";
+        updateStorage();
+        return true;
+      } catch (error) {
+        state.realtimeMessage = "Не удалось войти в Firebase. Проверь email, пароль и настройки Auth.";
+        updateStorage();
+        window.alert("Firebase-вход не удался. Проверь email, пароль и включённый Email/Password в Firebase Auth.");
+        return false;
+      }
+    }
+    async function publishRealtime(reason = "manual") {
+      if (!liveSync.enabled || !liveSync.connected || liveSync.applyingRemote || !liveSync.dataRef || !liveSync.set) return false;
+      const signedIn = await promptRealtimeSignIn();
+      if (!signedIn) return false;
+      try {
+        await liveSync.set(liveSync.dataRef, sanitizeLivePayload(CONFIG));
+        state.realtimeMessage = `Live sync обновлён: ${reason}. Пользователи увидят изменения почти мгновенно.`;
+        updateStorage();
+        return true;
+      } catch (error) {
+        state.realtimeMessage = "Запись в live-sync не удалась. Проверь Firebase Rules и database path.";
+        updateStorage();
+        window.alert("Не удалось опубликовать live-версию. Проверь Firebase Rules и путь в realtime-config.js.");
+        return false;
+      }
+    }
+    async function initRealtime() {
+      if (!liveSync.enabled || liveSync.initialized) {
+        updateStorage();
+        return;
+      }
+      const firebaseConfig = REALTIME_CONFIG.firebaseConfig || {};
+      const databasePath = REALTIME_CONFIG.databasePath || "maps/festival-map";
+      if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL || !databasePath) {
+        state.realtimeMessage = "Live sync включён в коде, но Firebase-конфиг заполнен не полностью.";
+        updateStorage();
+        return;
+      }
+      try {
+        const [
+          firebaseAppModule,
+          firebaseDatabaseModule,
+          firebaseAuthModule
+        ] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js"),
+          import("https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js")
+        ]);
+        const app = firebaseAppModule.getApps().length
+          ? firebaseAppModule.getApp()
+          : firebaseAppModule.initializeApp(firebaseConfig);
+        liveSync.firebaseApp = app;
+        liveSync.database = firebaseDatabaseModule.getDatabase(app);
+        liveSync.dataRef = firebaseDatabaseModule.ref(liveSync.database, databasePath);
+        liveSync.set = firebaseDatabaseModule.set;
+        liveSync.get = firebaseDatabaseModule.get;
+        liveSync.auth = firebaseAuthModule.getAuth(app);
+        liveSync.signInWithEmailAndPassword = firebaseAuthModule.signInWithEmailAndPassword;
+        liveSync.signOut = firebaseAuthModule.signOut;
+        firebaseAuthModule.onAuthStateChanged(liveSync.auth, (user) => {
+          liveSync.authReady = Boolean(user);
+          state.realtimeAuthReady = Boolean(user);
+          updateStorage();
+        });
+        firebaseDatabaseModule.onValue(liveSync.dataRef, (snapshot) => {
+          liveSync.connected = true;
+          state.realtimeConfigured = true;
+          state.realtimeConnected = true;
+          const raw = snapshot.val();
+          if (!raw) {
+            state.realtimeMessage = "Live sync подключён. В базе пока пусто, можно опубликовать текущую карту.";
+            updateStorage();
+            return;
+          }
+          if (raw._sync?.updatedBy === liveSync.sessionId) {
+            state.realtimeMessage = "Live sync подключён. Ты видишь актуальную live-версию.";
+            updateStorage();
+            return;
+          }
+          liveSync.applyingRemote = true;
+          state.realtimeApplying = true;
+          applyConfigObject(raw, { skipLocalPersist: false });
+          liveSync.applyingRemote = false;
+          state.realtimeApplying = false;
+          state.realtimeMessage = "Карта обновлена из live-sync. Новые изменения пришли в реальном времени.";
+          updateStorage();
+        }, (error) => {
+          state.realtimeMessage = "Не удалось подписаться на live-sync. Проверь databaseURL и Firebase Rules.";
+          updateStorage();
+        });
+        liveSync.initialized = true;
+        state.realtimeInitialized = true;
+        state.realtimeConfigured = true;
+        state.realtimeMessage = "Live sync подключён. Карта теперь слушает изменения из Firebase в реальном времени.";
+        updateStorage();
+      } catch (error) {
+        state.realtimeMessage = "Live sync не инициализировался. Проверь firebaseConfig в realtime-config.js.";
+        updateStorage();
+      }
+    }
+    function persistLocal() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(CONFIG));
         const label = new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(new Date());
@@ -636,9 +819,19 @@
     function updateStorage() {
       refs.badgeSave.textContent = state.savedLabel;
       refs.storageText.textContent = state.adminUnlocked
-        ? (state.storageWarning || "Режим администратора активен. Изменения сохраняются локально, и конфиг можно скачать в JSON.")
+        ? (state.storageWarning || state.realtimeMessage || "Режим администратора активен. Изменения сохраняются локально, и конфиг можно скачать в JSON.")
         : "Нажми на точку, чтобы увидеть её описание и детали.";
-      refs.jsonStatus.textContent = state.storageWarning || "Если позже пришлёшь логотип и саму карту, их можно будет просто подставить сюда или через загрузку выше.";
+      refs.jsonStatus.textContent = state.storageWarning || state.realtimeMessage || "Если позже пришлёшь логотип и саму карту, их можно будет просто подставить сюда или через загрузку выше.";
+      if (refs.realtimeBadge) {
+        refs.realtimeBadge.textContent = !liveSync.enabled
+          ? "Live sync выключен"
+          : (state.realtimeConnected
+            ? (state.realtimeAuthReady ? "Live sync активен" : "Live sync подключён")
+            : "Live sync не подключён");
+      }
+      if (refs.realtimeStatusText) {
+        refs.realtimeStatusText.textContent = state.realtimeMessage;
+      }
     }
     function updateAdminVisibility() {
       refs.openDrawer.hidden = true;
@@ -652,6 +845,7 @@
       if (state.adminUnlocked) {
         setTab("points");
         setDrawerOpen(true);
+        void initRealtime();
         return;
       }
       const password = window.prompt("Введите пароль администратора");
@@ -665,15 +859,22 @@
       updateStorage();
       setTab("points");
       setDrawerOpen(true);
+      void initRealtime();
       window.alert("Режим администратора активирован.");
     }
-    function lockAdminAccess() {
+    async function lockAdminAccess() {
       state.adminUnlocked = false;
       state.addMode = false;
       state.moveMode = false;
       state.dragging = false;
       state.draggedPointId = null;
       state.dragMoved = false;
+      if (liveSync.authReady && liveSync.signOut && liveSync.auth) {
+        try {
+          await liveSync.signOut(liveSync.auth);
+        } catch (error) {
+        }
+      }
       setDrawerOpen(false);
       renderAll();
     }
@@ -959,7 +1160,8 @@
       }, CONFIG.points.length);
       CONFIG.points.push(point);
       state.selectedPointId = point.id;
-      persist();
+      persistLocal();
+      void publishRealtime("create-point");
       renderAll();
       return point;
     }
@@ -971,7 +1173,8 @@
       CONFIG.accentColor = isHex(refs.accentColorInput.value) ? refs.accentColorInput.value : DEFAULT_CONFIG.accentColor;
       CONFIG.logoImage = refs.logoUrlInput.value.trim();
       CONFIG.backgroundImage = refs.mapUrlInput.value.trim();
-      persist();
+      persistLocal();
+      void publishRealtime("save-general");
       renderAll();
     }
     function saveSelectedPoint() {
@@ -986,7 +1189,8 @@
       point.link = refs.pointLinkInput.value.trim();
       point.description = refs.pointDescriptionInput.value.trim();
       point.visible = Boolean(refs.pointVisibleInput.checked);
-      persist();
+      persistLocal();
+      void publishRealtime("save-point");
       renderAll();
     }
     function duplicatePoint() {
@@ -995,7 +1199,8 @@
       const copy = normalizePoint({ ...point, id: nextId(CONFIG.points), title: `${point.title} копия`, x: clamp(point.x + 3, 0, 100), y: clamp(point.y + 3, 0, 100) }, CONFIG.points.length);
       CONFIG.points.push(copy);
       state.selectedPointId = copy.id;
-      persist();
+      persistLocal();
+      void publishRealtime("duplicate-point");
       renderAll();
       requestAnimationFrame(() => focusPoint(copy.id));
     }
@@ -1005,19 +1210,13 @@
       if (!window.confirm(`Удалить точку «${point.title}»?`)) return;
       CONFIG.points = CONFIG.points.filter((item) => item.id !== point.id);
       state.selectedPointId = CONFIG.points[0]?.id || null;
-      persist();
+      persistLocal();
+      void publishRealtime("delete-point");
       renderAll();
     }
     function replaceConfig(next) {
-      const normalized = normalizeConfig(next);
-      Object.keys(CONFIG).forEach((key) => delete CONFIG[key]);
-      Object.assign(CONFIG, normalized);
-      state.selectedPointId = CONFIG.points[0]?.id || null;
-      state.currentZoom = clamp(Number(CONFIG.initialZoom ?? 1), Number(CONFIG.minZoom ?? 0.8), Number(CONFIG.maxZoom ?? 2.4));
-      state.addMode = false;
-      state.moveMode = false;
-      persist();
-      renderAll();
+      applyConfigObject(next);
+      void publishRealtime("replace-config");
     }
     function uploadImage(input, targetInput) {
       const file = input.files?.[0];
@@ -1112,7 +1311,8 @@
       state.draggedPointId = null;
       refs.layer.querySelectorAll(".point.dragging").forEach((point) => point.classList.remove("dragging"));
       if (state.dragMoved) {
-        persist();
+        persistLocal();
+        void publishRealtime("drag-point");
         renderAll();
       }
     };
@@ -1199,6 +1399,16 @@
     refs.uploadMapBtn.addEventListener("click", () => refs.mapUpload.click());
     refs.logoUpload.addEventListener("change", () => uploadImage(refs.logoUpload, refs.logoUrlInput));
     refs.mapUpload.addEventListener("change", () => uploadImage(refs.mapUpload, refs.mapUrlInput));
+    refs.realtimeConnect.addEventListener("click", async () => {
+      await initRealtime();
+      if (!liveSync.enabled) {
+        window.alert("Live sync пока не активирован. Заполни realtime-config.js данными Firebase и включи enabled: true.");
+      }
+    });
+    refs.realtimePublish.addEventListener("click", async () => {
+      await initRealtime();
+      await publishRealtime("manual-publish");
+    });
 
     refs.refreshJson.addEventListener("click", () => updateJson(true));
     refs.applyJson.addEventListener("click", applyJson);
@@ -1229,8 +1439,9 @@
       setTimeout(() => refs.preloader.classList.add("hidden"), 550);
     });
 
-    persist();
+    persistLocal();
     renderAll();
+    void initRealtime();
   </script>
 </body>
 </html>

@@ -325,14 +325,21 @@
 
       <section class="section" data-section="points">
         <div class="sheet">
+          <div class="status-line" id="placementStatus">
+            Черновик сохраняется на этом устройстве автоматически. Когда закончишь, скачай итоговый JSON и пришли мне его, я зафиксирую карту навсегда.
+          </div>
           <div class="search"><input class="input" id="adminSearch" type="search" placeholder="Поиск по точкам" /></div>
           <div class="quick-grid">
-            <button class="btn btn-primary" id="toggleAdd" type="button">Режим добавления</button>
-            <button class="btn" id="toggleMove" type="button">Режим перемещения</button>
+            <button class="btn btn-primary" id="toggleAdd" type="button">Добавить по клику</button>
+            <button class="btn" id="toggleMove" type="button">Режим расстановки</button>
             <button class="btn btn-ghost" id="createCenter" type="button">Создать в центре</button>
             <button class="btn btn-ghost" id="duplicatePoint" type="button">Дублировать</button>
             <button class="btn btn-danger" id="deletePoint" type="button">Удалить</button>
             <button class="btn" id="focusPoint" type="button">Показать на карте</button>
+          </div>
+          <div class="quick-grid">
+            <button class="btn" id="quickCopyLayout" type="button">Скопировать итоговый JSON</button>
+            <button class="btn btn-success" id="quickDownloadLayout" type="button">Скачать итоговый JSON</button>
           </div>
           <div class="stack" id="adminList"></div>
         </div>
@@ -513,8 +520,11 @@
       uploadMapBtn: $("uploadMapBtn"),
       saveGeneral: $("saveGeneral"),
       adminSearch: $("adminSearch"),
+      placementStatus: $("placementStatus"),
       toggleAdd: $("toggleAdd"),
       toggleMove: $("toggleMove"),
+      quickCopyLayout: $("quickCopyLayout"),
+      quickDownloadLayout: $("quickDownloadLayout"),
       createCenter: $("createCenter"),
       duplicatePoint: $("duplicatePoint"),
       deletePoint: $("deletePoint"),
@@ -810,8 +820,8 @@
     }
     function updateMode() {
       refs.badgeMode.textContent = state.addMode ? "Добавление" : state.moveMode ? "Перемещение" : "Просмотр";
-      refs.toggleAdd.textContent = state.addMode ? "Выключить добавление" : "Режим добавления";
-      refs.toggleMove.textContent = state.moveMode ? "Остановить перемещение" : "Режим перемещения";
+      refs.toggleAdd.textContent = state.addMode ? "Остановить добавление" : "Добавить по клику";
+      refs.toggleMove.textContent = state.moveMode ? "Закончить расстановку" : "Режим расстановки";
       refs.addHint.classList.toggle("visible", state.addMode);
       refs.layer.classList.toggle("add", state.addMode);
       refs.zoomReset.textContent = `${Math.round(state.currentZoom * 100)}%`;
@@ -832,6 +842,9 @@
       if (refs.realtimeStatusText) {
         refs.realtimeStatusText.textContent = state.realtimeMessage;
       }
+      if (refs.placementStatus) {
+        refs.placementStatus.textContent = `Черновик сохраняется на этом устройстве автоматически. ${state.savedLabel}. Когда закончишь, нажми «Скачать итоговый JSON» и пришли мне его, я зафиксирую карту навсегда.`;
+      }
     }
     function updateAdminVisibility() {
       refs.openDrawer.hidden = true;
@@ -843,9 +856,12 @@
     }
     function requestAdminAccess() {
       if (state.adminUnlocked) {
+        state.addMode = false;
+        state.moveMode = true;
         setTab("points");
         setDrawerOpen(true);
         void initRealtime();
+        renderAll();
         return;
       }
       const password = window.prompt("Введите пароль администратора");
@@ -855,11 +871,14 @@
         return;
       }
       state.adminUnlocked = true;
+      state.addMode = false;
+      state.moveMode = true;
       updateAdminVisibility();
       updateStorage();
       setTab("points");
       setDrawerOpen(true);
       void initRealtime();
+      renderAll();
       window.alert("Режим администратора активирован.");
     }
     async function lockAdminAccess() {
@@ -1414,6 +1433,8 @@
     refs.applyJson.addEventListener("click", applyJson);
     refs.copyJson.addEventListener("click", copyJson);
     refs.downloadJson.addEventListener("click", downloadJson);
+    refs.quickCopyLayout.addEventListener("click", () => { void copyJson(); });
+    refs.quickDownloadLayout.addEventListener("click", downloadJson);
     refs.importJson.addEventListener("click", () => refs.jsonUpload.click());
     refs.jsonUpload.addEventListener("change", () => {
       importJsonFile(refs.jsonUpload.files?.[0] || null);

@@ -1,62 +1,80 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Festival Map</title>
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
+    @import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap");
     :root {
-      --bg:#08111d; --panel:rgba(10,19,32,.9); --soft:rgba(255,255,255,.05); --soft-2:rgba(255,255,255,.03);
-      --line:rgba(255,255,255,.1); --text:#f8fbff; --muted:#9db1c8; --accent:#f97316; --accent-soft:rgba(249,115,22,.16);
-      --accent-line:rgba(249,115,22,.3); --danger:#ef4444; --success:#22c55e; --shadow:0 20px 48px rgba(0,0,0,.34);
+      --bg:#fff8f3; --panel:rgba(255,255,255,.92); --soft:#fff4ee; --soft-2:#fffaf7;
+      --line:rgba(226,116,169,.16); --text:#3f2140; --muted:#8b667c; --accent:#e43f93; --accent-soft:rgba(228,63,147,.12);
+      --accent-line:rgba(228,63,147,.26); --danger:#ef4444; --success:#22c55e; --shadow:0 20px 48px rgba(154,86,120,.14);
       --safe-top:max(16px, env(safe-area-inset-top)); --safe-right:max(16px, env(safe-area-inset-right));
       --safe-bottom:max(16px, env(safe-area-inset-bottom)); --safe-left:max(16px, env(safe-area-inset-left));
     }
     * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html,body { margin:0; min-height:100%; background:
-      radial-gradient(circle at top left, rgba(249,115,22,.18), transparent 28%),
-      radial-gradient(circle at bottom right, rgba(34,197,94,.12), transparent 22%),
-      linear-gradient(180deg, #101b2a 0%, #07101b 56%, #040913 100%); color:var(--text); font-family:"Manrope","Segoe UI",sans-serif; }
+      radial-gradient(circle at top left, rgba(255,191,218,.5), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(255,232,193,.5), transparent 22%),
+      linear-gradient(180deg, #fffaf6 0%, #fff4ee 56%, #fffaf8 100%); color:var(--text); font-family:"Golos Text","Segoe UI",sans-serif; }
     body.drawer-open { overflow:hidden; }
     button,input,textarea,select { font:inherit; color:inherit; }
     button { border:0; background:none; padding:0; }
     img { max-width:100%; }
     [hidden] { display:none !important; }
     .preloader { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;
-      background:radial-gradient(circle at top, rgba(249,115,22,.22), transparent 25%), linear-gradient(180deg, #09121f 0%, #040913 100%);
+      background:radial-gradient(circle at top, rgba(228,63,147,.16), transparent 25%), linear-gradient(180deg, #fff8f5 0%, #fff2ea 100%);
       transition:opacity .35s ease, visibility .35s ease; }
     .preloader.hidden { opacity:0; visibility:hidden; pointer-events:none; }
-    .mark { width:82px; height:82px; display:grid; place-items:center; border-radius:24px; font:700 24px/1 "Space Grotesk","Manrope",sans-serif;
-      letter-spacing:.08em; background:linear-gradient(180deg, rgba(249,115,22,.28), rgba(249,115,22,.1)); border:1px solid rgba(249,115,22,.32); }
-    .ring { width:74px; height:74px; border-radius:999px; border:3px solid rgba(255,255,255,.08); border-top-color:var(--accent); animation:spin .85s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    .preloader-logo-wrap { position:relative; width:min(180px, 42vw); display:block; }
+    .preloader-logo { width:100%; display:block; filter:grayscale(1) saturate(0) brightness(1.02) drop-shadow(0 14px 24px rgba(154,86,120,.10)); opacity:0; transform:translateY(10px) scale(.985); animation:logoColorFill 1.5s cubic-bezier(.22,1,.36,1) forwards; }
+    .welcome-modal { position:fixed; inset:0; z-index:190; display:grid; place-items:center; padding:18px; background:rgba(255,246,241,.56); backdrop-filter:blur(12px); opacity:0; visibility:hidden; pointer-events:none; transition:opacity .28s ease, visibility .28s ease; }
+    .welcome-modal.active { opacity:1; visibility:visible; pointer-events:auto; }
+    .welcome-card { width:min(100%, 460px); padding:24px 22px 22px; border-radius:30px; background:linear-gradient(180deg, rgba(255,252,249,.98), rgba(255,245,240,.96)); border:1px solid rgba(226,116,169,.16); box-shadow:0 24px 54px rgba(154,86,120,.18); text-align:center; color:var(--text); transform:translateY(10px) scale(.985); transition:transform .3s cubic-bezier(.22,1,.36,1); }
+    .welcome-modal.active .welcome-card { transform:translateY(0) scale(1); }
+    .welcome-logo { width:min(156px, 42vw); margin:0 auto 16px; display:block; filter:drop-shadow(0 12px 22px rgba(154,86,120,.12)); }
+    .welcome-kicker { margin:0 0 10px; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    .welcome-title { margin:0 0 10px; font:800 clamp(26px, 6vw, 34px)/1.04 "Golos Text","Segoe UI",sans-serif; }
+    .welcome-text { margin:0 0 18px; color:var(--muted); font-size:15px; line-height:1.55; }
+    .welcome-actions { display:flex; gap:10px; justify-content:center; }
+    .welcome-btn { min-width:180px; }
+    @keyframes logoReveal {
+      from { opacity:0; transform:translateY(14px) scale(.94); }
+      to { opacity:1; transform:translateY(0) scale(1); }
+    }
+    @keyframes logoColorFill {
+      0% { opacity:0; transform:translateY(10px) scale(.985); filter:grayscale(1) saturate(0) brightness(1.02) drop-shadow(0 14px 24px rgba(154,86,120,.06)); }
+      20% { opacity:1; transform:translateY(0) scale(1); filter:grayscale(1) saturate(0) brightness(1.04) drop-shadow(0 14px 24px rgba(154,86,120,.08)); }
+      65% { opacity:1; transform:translateY(0) scale(1); filter:grayscale(.45) saturate(.55) brightness(1.02) drop-shadow(0 14px 24px rgba(154,86,120,.12)); }
+      100% { opacity:1; transform:translateY(0) scale(1); filter:grayscale(0) saturate(1) brightness(1) drop-shadow(0 14px 24px rgba(154,86,120,.14)); }
+    }
     @keyframes pulse { 0% { box-shadow:0 12px 24px rgba(0,0,0,.24), 0 0 0 0 rgba(255,255,255,.34); } 70% { box-shadow:0 12px 24px rgba(0,0,0,.24), 0 0 0 18px rgba(255,255,255,0); } 100% { box-shadow:0 12px 24px rgba(0,0,0,.24), 0 0 0 0 rgba(255,255,255,0); } }
-    .app { display:grid; grid-template-columns:1fr; min-height:100vh; position:relative; }
-    .sidebar { position:fixed; top:var(--safe-top); left:var(--safe-left); z-index:24; width:auto; max-width:calc(100vw - 120px); padding:0; border:0;
-      background:transparent; backdrop-filter:none; display:flex; flex-direction:column; gap:18px; overflow:visible; pointer-events:none; }
-    .sidebar > :not(:first-child) { display:none; }
-    .sidebar .card { padding:0; background:transparent; border:0; box-shadow:none; }
-    .sidebar .stats,.sidebar .meta,.sidebar .brand-copy p { display:none; }
-    .sidebar .brand { gap:12px; }
-    .sidebar .brand-copy h1 { margin:0; font-size:18px; text-shadow:0 8px 22px rgba(0,0,0,.2); }
+    .app { display:grid; grid-template-columns:1fr; gap:0; min-height:100vh; position:relative; padding:0; }
+    .sidebar { display:none !important; }
+    .sidebar > :not(:first-child) { display:block; }
+    .sidebar .card { padding:16px; background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,249,246,.95)); border:1px solid rgba(226,116,169,.14); box-shadow:var(--shadow); }
+    .sidebar .stats,.sidebar .meta,.sidebar .brand-copy p { display:flex; }
+    .sidebar .brand { gap:14px; align-items:flex-start; }
+    .sidebar .brand-copy h1 { margin:2px 0 6px; font-size:28px; text-shadow:none; }
+    .sidebar .brand-copy p { display:block; }
     .sidebar .logo-slot { pointer-events:auto; }
-    .card,.sheet { border:1px solid var(--line); background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)); border-radius:24px; padding:18px; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+    .card,.sheet { border:1px solid var(--line); background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,249,246,.95)); border-radius:24px; padding:18px; box-shadow:inset 0 1px 0 rgba(255,255,255,.6); }
     .eyebrow { margin:0; font-size:12px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); }
     .brand { display:flex; gap:14px; align-items:center; }
     .logo-slot { width:78px; height:78px; border-radius:24px; overflow:hidden; display:grid; place-items:center; flex:0 0 auto;
-      background:linear-gradient(135deg, rgba(249,115,22,.22), rgba(56,189,248,.12)); border:1px solid rgba(255,255,255,.14); box-shadow:var(--shadow); }
+      background:linear-gradient(135deg, rgba(255,210,231,.9), rgba(255,243,224,.95)); border:1px solid rgba(226,116,169,.18); box-shadow:var(--shadow); }
     .logo-slot img { width:100%; height:100%; object-fit:cover; display:none; }
     .logo-slot.has-image img { display:block; }
-    .logo-slot span { font:700 16px/1 "Space Grotesk","Manrope",sans-serif; letter-spacing:.08em; }
+    .logo-slot span { font:800 16px/1 "Golos Text","Segoe UI",sans-serif; letter-spacing:.02em; }
     .logo-slot.has-image span { display:none; }
-    .brand-copy h1,.toolbar-title,.detail-title { margin:6px 0 8px; font-family:"Space Grotesk","Manrope",sans-serif; line-height:1; }
+    .brand-copy h1,.toolbar-title,.detail-title { margin:6px 0 8px; font-family:"Golos Text","Segoe UI",sans-serif; font-weight:800; line-height:1.04; }
     .brand-copy h1 { font-size:clamp(28px, 3vw, 36px); }
     .brand-copy p,.hint,.toolbar-sub,.meta small,.list-item p,.sheet p,.detail-text,.note { margin:0; color:var(--muted); line-height:1.6; font-size:14px; }
     .stats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:12px; }
-    .stat { padding:14px; border-radius:18px; background:var(--soft); border:1px solid rgba(255,255,255,.08); }
+    .stat { padding:14px; border-radius:18px; background:var(--soft); border:1px solid rgba(226,116,169,.12); }
     .stat span { display:block; color:var(--muted); font-size:12px; }
-    .stat strong { display:block; margin-top:8px; font:700 24px/1 "Space Grotesk","Manrope",sans-serif; }
+    .stat strong { display:block; margin-top:8px; font:800 24px/1 "Golos Text","Segoe UI",sans-serif; }
     .meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
     .pill,.chip,.btn,.input,.textarea { border:1px solid var(--line); background:var(--soft); border-radius:16px; }
     .pill,.chip { padding:10px 12px; font-size:12px; color:var(--muted); display:inline-flex; align-items:center; gap:8px; }
@@ -78,26 +96,26 @@
     .btn-icon { min-width:46px; padding-inline:0; font-size:18px; }
     .btn-block { width:100%; }
     .stack { display:flex; flex-direction:column; gap:10px; max-height:360px; overflow:auto; padding-right:4px; }
-    .list-item { width:100%; text-align:left; padding:14px; border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.04); display:grid; gap:8px; cursor:pointer; transition:.2s ease; }
-    .list-item:hover,.list-item.active { border-color:var(--accent-line); background:rgba(255,255,255,.08); transform:translateY(-1px); }
+    .list-item { width:100%; text-align:left; padding:14px; border-radius:18px; border:1px solid var(--line); background:#fff; display:grid; gap:8px; cursor:pointer; transition:.2s ease; }
+    .list-item:hover,.list-item.active { border-color:var(--accent-line); background:#fff3f9; transform:translateY(-1px); }
     .list-head { display:flex; justify-content:space-between; gap:10px; align-items:center; }
-    .list-item strong { display:block; font-size:15px; }
+    .list-item strong { display:block; font-size:15px; font-weight:800; }
     .dot { width:12px; height:12px; border-radius:999px; flex:0 0 auto; box-shadow:0 0 0 4px rgba(255,255,255,.05); }
     .badge { display:inline-flex; align-items:center; gap:8px; padding:7px 10px; border-radius:999px; font-size:11px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:var(--muted); }
     .badge.hidden { background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.2); color:#fecaca; }
     .workspace { min-width:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
     .map-shell { min-height:100vh; display:flex; flex-direction:column; border:0; border-radius:0; overflow:hidden; background:transparent; box-shadow:none; position:relative; }
-    .toolbar { position:fixed; top:var(--safe-top); right:var(--safe-right); z-index:22; display:flex; justify-content:flex-end; gap:14px; align-items:flex-start; padding:0; border:0; background:transparent; backdrop-filter:none; }
+    .toolbar { position:fixed; right:12px; bottom:12px; z-index:22; display:flex; justify-content:flex-end; gap:14px; align-items:flex-start; padding:0; border:0; background:transparent; backdrop-filter:none; }
     .toolbar .toolbar-col:first-child { display:none; }
-    .toolbar .toolbar-col:last-child .toolbar-row:last-child { display:none; }
+    .toolbar .toolbar-col:last-child .toolbar-row:last-child { display:flex; justify-content:flex-end; }
     .toolbar-col { display:flex; flex-direction:column; gap:10px; min-width:0; }
     .toolbar-row,.actions,.meta-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
     .toolbar-title { font-size:clamp(22px, 2vw, 28px); margin:0; }
-    .stage-wrap { position:relative; flex:1; min-height:0; background:#f1efe7; }
-    .viewport { position:relative; width:100%; height:100%; min-height:100vh; overflow:auto; padding:18px; display:grid; place-items:center; background:#efece1; }
-    .scale-stage { position:relative; display:grid; place-items:center; }
-    .canvas { position:relative; width:980px; max-width:100%; border-radius:28px; overflow:hidden; background:#d8cfbe; border:12px solid #e43f93; box-shadow:0 20px 40px rgba(0,0,0,.14); transform-origin:center center; transition:transform .22s ease; }
-    .canvas.empty { aspect-ratio:4/3; }
+    .stage-wrap { position:relative; flex:1; min-height:100dvh; background:transparent; border-radius:30px; overflow:hidden; }
+    .viewport { position:relative; width:100%; height:100%; min-height:100dvh; overflow:auto; padding:10px; display:grid; place-items:center; background:transparent; }
+    .scale-stage { position:relative; display:grid; place-items:center; width:100%; justify-items:center; }
+    .canvas { position:relative; z-index:1; width:980px; max-width:100%; height:auto !important; margin-inline:auto; border-radius:28px; overflow:hidden; background:transparent; border:12px solid #e43f93; box-shadow:0 20px 40px rgba(0,0,0,.14); transform-origin:center center; transition:transform .22s ease; }
+    .canvas.empty { min-height:min(56vw, 420px); }
     .canvas img { display:block; width:100%; height:auto; pointer-events:none; user-select:none; -webkit-user-drag:none; }
     .placeholder { position:absolute; inset:0; display:none; align-items:center; justify-content:center; padding:28px; text-align:center;
       background:linear-gradient(180deg, #d3d1bf, #f1efe7); color:#57391f; }
@@ -105,23 +123,23 @@
     .placeholder strong { display:block; font:700 20px/1.2 "Space Grotesk","Manrope",sans-serif; margin-bottom:8px; }
     .layer { position:absolute; inset:0; z-index:2; touch-action:manipulation; }
     .layer.add { cursor:crosshair; }
-    .point { position:absolute; transform:translate(-50%, -50%); width:auto; min-width:44px; min-height:44px; border:0; background:transparent;
+    .point { position:absolute; transform:translate(-50%, -50%); width:auto; min-width:48px; min-height:48px; border:0; background:transparent;
       display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.18s ease; touch-action:none; z-index:3; overflow:visible; }
     .point:hover { z-index:5; }
     .point.selected { z-index:11; }
     .point.dragging { z-index:16; }
     .point.dim { opacity:.56; filter:grayscale(.1); }
-    .point-pin { position:relative; width:46px; height:38px; border-radius:12px; background:#e43f93; border:2px solid rgba(255,255,255,.18);
+    .point-pin { position:relative; width:56px; height:38px; border-radius:12px; background:#e43f93; border:2px solid rgba(255,255,255,.18);
       box-shadow:0 10px 18px rgba(133,24,74,.28); display:grid; place-items:center; color:#fff; transition:transform .18s ease, box-shadow .18s ease; }
-    .point:hover .point-pin,.point.selected .point-pin { transform:scale(1.06); box-shadow:0 14px 24px rgba(133,24,74,.34), 0 0 0 8px rgba(228,63,147,.14); }
+    .point:hover .point-pin,.point.selected .point-pin { transform:scale(1.04); box-shadow:0 14px 24px rgba(133,24,74,.34), 0 0 0 8px rgba(228,63,147,.14); }
     .point.dragging .point-pin { box-shadow:0 16px 26px rgba(0,0,0,.3), 0 0 0 12px rgba(34,197,94,.16); }
-    .point-index { position:absolute; left:-12px; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:999px; background:#fff; color:#df3288;
-      display:grid; place-items:center; font:800 15px/1 "Space Grotesk","Manrope",sans-serif; box-shadow:0 6px 14px rgba(0,0,0,.16); }
-    .point-icon { width:22px; height:22px; }
+    .point-index { position:absolute; left:-11px; top:50%; transform:translateY(-50%); min-width:26px; height:26px; padding:0 5px; border-radius:999px; background:#fff; color:#df3288;
+      display:grid; place-items:center; white-space:nowrap; font:900 12px/1 "Golos Text","Segoe UI",sans-serif; box-shadow:0 6px 14px rgba(0,0,0,.16); }
+    .point-icon { width:16px; height:16px; stroke-width:1.7; opacity:.95; margin-left:8px; }
     .hint-float { position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:12; padding:11px 14px; border-radius:999px;
       background:rgba(7,16,26,.92); border:1px solid var(--accent-line); font-size:13px; display:none; }
     .hint-float.visible { display:inline-flex; gap:8px; align-items:center; }
-    .detail { position:absolute; left:18px; right:18px; bottom:18px; max-width:420px; padding:18px; border-radius:24px; border:1px solid rgba(228,63,147,.18);
+    .detail { position:absolute; left:18px; right:18px; bottom:18px; max-width:460px; padding:18px; border-radius:24px; border:1px solid rgba(228,63,147,.18);
       background:rgba(255,255,255,.94); color:#22141d; box-shadow:0 18px 40px rgba(0,0,0,.18); z-index:13; transition:.2s ease; }
     .detail.is-hidden { opacity:0; visibility:hidden; pointer-events:none; transform:translateY(14px); }
     .map-context-menu { position:absolute; min-width:190px; padding:10px; border-radius:18px; border:1px solid rgba(228,63,147,.18); background:rgba(255,255,255,.98);
@@ -134,15 +152,11 @@
     .detail .btn { background:rgba(0,0,0,.03); }
     .detail .btn-primary { color:#fff; background:#e43f93; border-color:#e43f93; }
     .detail-head { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
-    .detail-title { margin:10px 0 8px; font-size:24px; }
+    .detail-title { margin:10px 0 8px; font-size:24px; font-weight:800; }
     .detail-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
     .close { width:38px; height:38px; border-radius:999px; display:grid; place-items:center; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); cursor:pointer; flex:0 0 auto; }
     .note-bar { display:none; }
-    .float-admin { position:fixed; right:var(--safe-right); bottom:calc(var(--safe-bottom) + 6px); z-index:70; display:none; border-radius:999px; padding-inline:18px; box-shadow:var(--shadow); }
-    .overlay { position:fixed; inset:0; background:rgba(2,6,23,.64); backdrop-filter:blur(6px); opacity:0; visibility:hidden; transition:.24s ease; z-index:79; }
-    .overlay.active { opacity:1; visibility:visible; }
-    .drawer { position:fixed; top:0; right:0; width:min(96vw,470px); height:100dvh; z-index:80; display:flex; flex-direction:column; background:rgba(7,16,26,.96); border-left:1px solid var(--line); box-shadow:var(--shadow); transform:translateX(102%); transition:transform .28s ease; }
-    .drawer.active { transform:translateX(0); }
+    .float-admin,.overlay,.drawer,.map-context-menu,.hint-float,#openDrawer,#detailEdit,#savePill { display:none !important; }
     .drawer-head { padding:calc(var(--safe-top) + 8px) 18px 14px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
     .drawer-head h2 { margin:6px 0; font:700 24px/1 "Space Grotesk","Manrope",sans-serif; }
     .drawer-close { width:40px; height:40px; border-radius:999px; display:grid; place-items:center; background:var(--soft); border:1px solid rgba(255,255,255,.08); cursor:pointer; font-size:18px; flex:0 0 auto; }
@@ -150,6 +164,42 @@
     .tab { min-height:44px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,.04); font-size:13px; font-weight:700; cursor:pointer; }
     .tab.active { background:var(--accent-soft); border-color:var(--accent-line); }
     .drawer-body { flex:1; overflow:auto; padding:18px; display:flex; flex-direction:column; gap:16px; }
+    body.local-admin-studio .overlay,
+    body.local-admin-studio .float-admin { display:none !important; }
+    body.local-admin-studio .drawer {
+      position:relative;
+      top:auto;
+      right:auto;
+      bottom:auto;
+      left:auto;
+      width:min(1400px, calc(100vw - 24px));
+      height:auto;
+      max-height:none;
+      margin:14px auto 24px;
+      border:1px solid var(--line);
+      border-radius:30px;
+      transform:none;
+      transition:none;
+    }
+    body.local-admin-studio .drawer.active { transform:none; }
+    body.local-admin-studio .drawer-head {
+      position:relative;
+      padding:26px 18px 14px;
+    }
+    body.local-admin-studio .drawer-head::before {
+      content:"";
+      position:absolute;
+      top:10px;
+      left:50%;
+      width:58px;
+      height:5px;
+      border-radius:999px;
+      transform:translateX(-50%);
+      background:rgba(255,255,255,.16);
+    }
+    body.local-admin-studio .drawer-body {
+      max-height:none;
+    }
     .section { display:none; flex-direction:column; gap:16px; }
     .section.active { display:flex; }
     .field-grid { display:grid; gap:12px; }
@@ -166,23 +216,80 @@
     .switch input:checked + span::after { transform:translateX(20px); }
     .json { min-height:240px; border-radius:18px; border:1px solid var(--line); background:var(--soft-2); padding:14px; resize:vertical; font:12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .empty { padding:18px; border-radius:18px; border:1px dashed rgba(255,255,255,.16); color:var(--muted); font-size:13px; line-height:1.55; text-align:center; }
-    @media (max-width:1120px) { .float-admin { display:inline-flex; } }
+    .icon-picker { display:grid; grid-template-columns:repeat(auto-fit, minmax(92px, 1fr)); gap:10px; }
+    .icon-choice { min-height:82px; padding:12px 10px; border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.04); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:.18s ease; text-align:center; }
+    .icon-choice:hover { border-color:var(--accent-line); background:rgba(255,255,255,.08); transform:translateY(-1px); }
+    .icon-choice.active { border-color:var(--accent-line); background:var(--accent-soft); box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); }
+    .icon-choice:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+    .icon-choice svg { width:22px; height:22px; color:#fff; }
+    .icon-choice span { font-size:11px; line-height:1.3; color:var(--text); }
+    .icon-hint { min-height:18px; }
+    .detail-badge-icon { width:13px; height:13px; flex:0 0 auto; opacity:.9; }
+    @media (min-width:981px) {
+      .app { grid-template-columns:1fr; gap:0; padding:0; }
+      .sidebar { display:none !important; }
+      .toolbar { position:absolute; top:18px; right:18px; bottom:auto; }
+      .workspace { min-height:100vh; }
+      .viewport { min-height:100vh; padding:18px; }
+    }
     @media (max-width:760px) {
-      .toolbar { top:calc(var(--safe-top) + 4px); } .sidebar { max-width:calc(100vw - 88px); } .sidebar .brand-copy h1 { font-size:15px; }
+      .welcome-modal { padding:14px; }
+      .welcome-card { width:100%; padding:22px 18px 18px; border-radius:26px; }
+      .welcome-logo { width:min(140px, 40vw); margin-bottom:14px; }
+      .welcome-text { font-size:14px; }
+      .welcome-actions { flex-direction:column; }
+      .welcome-btn { width:100%; min-width:0; }
+      .workspace { min-height:100dvh; display:block; }
+      .map-shell { min-height:100dvh; display:block; }
+      .stage-wrap { flex:none; min-height:100dvh; border-radius:0; background:transparent; }
+      .toolbar { position:fixed; top:12px; right:12px; left:auto; bottom:auto; justify-content:flex-end; align-items:flex-start; pointer-events:none; }
+      .toolbar .toolbar-col { pointer-events:auto; }
+      .toolbar .toolbar-col:last-child { width:auto; align-items:flex-end; }
+      .toolbar .toolbar-row:first-child { background:rgba(255,250,247,.94); border:1px solid rgba(226,116,169,.16); border-radius:18px; padding:6px; box-shadow:0 14px 28px rgba(154,86,120,.16); gap:6px; }
+      .toolbar .toolbar-row:last-child { display:none !important; }
+      .sidebar .brand-copy h1 { font-size:22px; }
       .field-grid.two,.quick-grid { grid-template-columns:1fr; }
-      .viewport { min-height:100vh; padding:10px; } .canvas { border-width:8px; border-radius:22px; }
-      .point { min-width:40px; min-height:40px; } .point-pin { width:42px; height:34px; border-radius:10px; } .point-index { width:25px; height:25px; font-size:13px; left:-10px; } .point-icon { width:18px; height:18px; }
-      .detail { left:12px; right:12px; bottom:12px; max-width:none; } .detail-title { font-size:20px; }
-      .drawer { top:auto; bottom:0; width:100%; height:min(90dvh,760px); border-left:0; border-top:1px solid var(--line); border-radius:28px 28px 0 0; transform:translateY(102%); }
-      .drawer.active { transform:translateY(0); } .drawer-head { padding-top:18px; }
+      .viewport { min-height:100dvh; height:100dvh; padding:84px 0 220px; display:grid; place-items:center; background:transparent; overflow:auto; }
+      .scale-stage { display:grid; width:100%; min-height:0; height:auto !important; justify-items:center; align-items:center; }
+      .canvas { width:100%; max-width:100%; border-width:0; border-radius:0; box-shadow:none; margin:0 auto; }
+      .point { min-width:38px; min-height:38px; }
+      .point-pin { width:40px; height:26px; border-radius:8px; box-shadow:0 7px 12px rgba(133,24,74,.18); }
+      .point-index { min-width:20px; height:20px; padding:0 4px; font-size:8px; left:-6px; box-shadow:0 4px 10px rgba(0,0,0,.12); }
+      .point-icon { width:12px; height:12px; opacity:.92; margin-left:6px; }
+      #selectionBadge { display:none !important; }
+      .btn { min-height:48px; font-size:15px; }
+      .btn-icon { min-width:48px; }
+      #zoomReset { min-width:72px; font-weight:800; }
+      .detail { position:fixed; left:10px; right:10px; bottom:10px; max-width:none; max-height:min(34dvh, 250px); overflow:auto; padding:14px 14px calc(14px + var(--safe-bottom)); border-radius:22px; border:1px solid rgba(228,63,147,.14); background:rgba(255,251,248,.96); box-shadow:0 10px 30px rgba(154,86,120,.14); }
+      .detail::before { content:""; display:block; width:42px; height:5px; border-radius:999px; background:rgba(139,102,124,.22); margin:0 auto 10px; }
+      .detail-head { align-items:flex-start; }
+      .detail-title { font-size:18px; line-height:1.05; margin:6px 0 6px; }
+      .detail-text { font-size:14px; line-height:1.4; }
+      .detail .badge { font-size:12px; }
+      .detail-actions { margin-top:12px; }
+      .detail-actions .btn { flex:1 1 auto; min-height:44px; }
+      .close { width:34px; height:34px; }
+      .note-bar { padding:12px 0 0; font-size:12px; }
     }
   </style>
 </head>
 <body>
   <div class="preloader" id="preloader">
-    <div class="mark">MAP</div>
-    <div class="ring"></div>
+    <div class="preloader-logo-wrap" aria-hidden="true">
+      <img class="preloader-logo" src="./assets/navruz-logo.svg" alt="Navruz logo" />
+    </div>
     <div class="hint">Подготавливаем интерактивную карту...</div>
+  </div>
+
+  <div class="welcome-modal" id="welcomeModal" aria-hidden="true">
+    <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+      <img class="welcome-logo" src="./assets/navruz-logo.svg" alt="Navruz Fest logo" />
+      <h1 class="welcome-title" id="welcomeTitle">Добро пожаловать на Dushanbe Navruz Fest</h1>
+      <p class="welcome-text">Откройте интерактивную карту фестиваля, чтобы быстро находить сцены, зоны активностей, сервисные точки и ключевые локации площадки.</p>
+      <div class="welcome-actions">
+        <button class="btn btn-primary welcome-btn" id="welcomeEnter" type="button">Открыть карту</button>
+      </div>
+    </div>
   </div>
 
   <div class="app">
@@ -216,7 +323,7 @@
       </section>
 
       <section class="card">
-        <p class="note" id="publicNote">Выбирай точки на карте, смотри зоны фестиваля и быстро находи нужные места.</p>
+        <p class="note" id="publicNote">Нажми на точку на карте или выбери локацию в списке слева, чтобы быстро открыть детали.</p>
       </section>
     </aside>
 
@@ -225,7 +332,7 @@
         <header class="toolbar">
           <div class="toolbar-col">
             <h2 class="toolbar-title" id="toolbarTitle">Карта фестиваля</h2>
-            <p class="toolbar-sub" id="toolbarSubtitle">Выбери точку на карте, чтобы открыть подробности по зоне.</p>
+            <p class="toolbar-sub" id="toolbarSubtitle">Навигация по карте фестиваля.</p>
             <div class="toolbar-row">
               <div class="pill"><span>Точек</span><strong id="badgePoints">0</strong></div>
               <div class="pill"><span>Режим</span><strong id="badgeMode">Просмотр</strong></div>
@@ -267,9 +374,9 @@
           <div class="detail is-hidden" id="detail">
             <div class="detail-head">
               <div>
-                <div class="badge" id="detailCategory">Подсказка</div>
+                <div class="badge" id="detailCategory">Локация</div>
                 <h3 class="detail-title" id="detailTitle">Выберите точку на карте</h3>
-                <p class="detail-text" id="detailText">Здесь будет появляться описание зоны, координаты и быстрые действия.</p>
+                <p class="detail-text" id="detailText">Здесь появятся название зоны, категория и краткая информация.</p>
               </div>
               <button class="close" id="closeDetail" type="button" aria-label="Скрыть карточку">×</button>
             </div>
@@ -282,7 +389,7 @@
         </div>
 
         <footer class="note-bar">
-          <span><strong>Мобильный акцент:</strong> карта адаптирована под телефон и удобно читается на небольшом экране.</span>
+          <span><strong>Навигация:</strong> приближай карту кнопками справа и выбирай точки прямо на схеме.</span>
           <span id="storageText">Нажми на точку, чтобы увидеть её описание и детали.</span>
         </footer>
       </section>
@@ -360,6 +467,11 @@
             <div class="field"><label for="pointCategoryInput">Категория</label><input class="input" id="pointCategoryInput" type="text" /></div>
             <div class="field"><label for="pointColorInput">Цвет точки</label><input class="input" id="pointColorInput" type="color" value="#f97316" /></div>
           </div>
+          <div class="field">
+            <label>Иконка точки</label>
+            <div class="icon-picker" id="pointIconGrid"></div>
+            <div class="status-line icon-hint" id="pointIconHint">Выбери иконку для этой точки.</div>
+          </div>
           <div class="field-grid two">
             <div class="field"><label for="pointXInput">X (%)</label><input class="input" id="pointXInput" type="number" min="0" max="100" step="0.1" /></div>
             <div class="field"><label for="pointYInput">Y (%)</label><input class="input" id="pointYInput" type="number" min="0" max="100" step="0.1" /></div>
@@ -416,11 +528,18 @@
   <input id="logoUpload" type="file" accept="image/*" hidden />
   <input id="mapUpload" type="file" accept="image/*" hidden />
   <input id="jsonUpload" type="file" accept="application/json,.json" hidden />
+  <script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>
   <script src="./realtime-config.js"></script>
 
   <script>
-    const STORAGE_KEY = "festival-map-studio-v2";
-    const ADMIN_PASSWORD_PLACEHOLDER = "admin1304";
+    const STORAGE_KEY = "festival-map-public-v2";
+    const FIXED_MAP_ASSET = "./assets/festival-map-base.png";
+    const ADMIN_PASSWORD_PLACEHOLDER = "";
+    const LOCAL_ADMIN_STUDIO = false;
+    const LOCAL_ADMIN_BACKGROUND_IMAGE = "";
+    const LOCAL_ADMIN_ZONE_SEED_STORAGE_KEY = "festival-map-local-zone-seed";
+    const LOCAL_ADMIN_ZONE_SEED_VERSION = "daromad-zones-v3";
     const REALTIME_CONFIG = window.MAP_REALTIME_CONFIG || { enabled: false };
     const DEFAULT_CONFIG = {
       title: "Festival Grounds",
@@ -429,31 +548,95 @@
       dateLabel: "Дата будет добавлена позже",
       accentColor: "#f97316",
       logoImage: "",
-      backgroundImage: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1800&q=80",
+      backgroundImage: FIXED_MAP_ASSET,
       initialZoom: 1,
       minZoom: 0.8,
       maxZoom: 2.4,
       zoomStep: 0.2,
       points: [
-        { id: "1", title: "Главный вход", label: "Вход", category: "Навигация", description: "Точка встречи и входа для гостей.", x: 13, y: 73, color: "#ef4444", link: "", visible: true },
-        { id: "2", title: "Главная сцена", label: "Main Stage", category: "Сцены", description: "Основная музыкальная площадка фестиваля.", x: 51, y: 38, color: "#f97316", link: "", visible: true },
-        { id: "3", title: "Фудкорт", label: "Food", category: "Еда", description: "Зона питания, которую удобно быстро найти в мобильной карте.", x: 76, y: 58, color: "#22c55e", link: "", visible: true }
+        { id: "1", numberLabel: "1", title: "ДАРОМАД", label: "НУҚТАИ ФУРӮШИ ЧИПТАҲО", category: "Навигация", description: "", x: 85.3, y: 74.2, color: "#e43f93", icon: "entrance", link: "", visible: true },
+        { id: "2", numberLabel: "2", title: "НУҚТАИ ЧОПИ РАСМҲО", label: "ЧОПИ РАСМҲО", category: "Фото", description: "", x: 94.9, y: 75.1, color: "#e43f93", icon: "print", link: "", visible: true },
+        { id: "3", numberLabel: "3", title: "САҲНА", label: "САҲНА", category: "Саҳна", description: "", x: 51.7, y: 17.3, color: "#e43f93", icon: "stage", link: "", visible: true },
+        { id: "4", numberLabel: "4", title: "МАЙДОНЧАИ НАМОИШИ ГУЛҲО", label: "НАМОИШИ ГУЛҲО", category: "Гулҳо", description: "", x: 35.8, y: 75.6, color: "#e43f93", icon: "flowers", link: "", visible: true },
+        { id: "5", numberLabel: "5", title: "МАЙДОНЧАИ БАРОИ КӮДАКОН", label: "БАРОИ КӮДАКОН", category: "Кӯдакон", description: "", x: 80.1, y: 60.5, color: "#e43f93", icon: "kids", link: "", visible: true },
+        { id: "6", numberLabel: "6", title: "НАМОЯНДАИ РАЁСАТИ ФАРҲАНГИ МАҚОМОТИ ИҶРОИЯИ ҲОКИМИЯТИ ДАВЛАТИИ ШАҲРИ ДУШАНБЕ", label: "РАЁСАТИ ФАРҲАНГ", category: "Фарҳанг", description: "", x: 13.5, y: 54.1, color: "#e43f93", icon: "theater", link: "", visible: true },
+        { id: "7", numberLabel: "7", title: "МАЙДОНЧАИ ҲУНАРҲОИ МАРДУМӢ", label: "ҲУНАРҲОИ МАРДУМӢ", category: "Ҳунарҳо", description: "", x: 65.3, y: 76.5, color: "#e43f93", icon: "crafts", link: "", visible: true },
+        { id: "8", numberLabel: "8", title: "МАЙДОНЧАИ ҒИЗО ВА НӮШОКИҲО", label: "ҒИЗО ВА НӮШОКИҲО", category: "Ғизо", description: "", x: 13.6, y: 26.7, color: "#e43f93", icon: "food", link: "", visible: true },
+        { id: "9", numberLabel: "9", title: "МАЙДОНЧАИ БОЗӢ", label: "БОЗӢ", category: "Бозӣ", description: "", x: 20, y: 40.8, color: "#e43f93", icon: "games", link: "", visible: true },
+        { id: "10", numberLabel: "10", title: "ФАЪОЛИЯТҲОИ ОИЛАВӢ", label: "ОИЛАВӢ", category: "Оила", description: "", x: 87.2, y: 46.9, color: "#e43f93", icon: "family", link: "", visible: true },
+        { id: "11", numberLabel: "11", title: "СТЕНДҲО АЗ САФАРАТҲО", label: "АЗ САФАРАТҲО", category: "Стендҳо", description: "", x: 84.5, y: 32.5, color: "#e43f93", icon: "embassy", link: "", visible: true },
+        { id: "12", numberLabel: "12", title: "МИНТАҚАИ ЭҶОДӢ", label: "ЭҶОДӢ", category: "Эҷодӣ", description: "", x: 83.5, y: 21.8, color: "#e43f93", icon: "creative", link: "", visible: true },
+        { id: "13", numberLabel: "13", title: "ЁРИИ ТАЪҶИЛИИ ТИББӢ / ХАДАМОТИ ОТАШНИШОНӢ", label: "ТИББӢ / ОТАШНИШОНӢ", category: "Хадамоти фаврӣ", description: "", x: 95.6, y: 56.8, color: "#e43f93", icon: "emergency", link: "", visible: true },
+        { id: "14", numberLabel: "14", title: "БИО-ҲОҶАТХОНА", label: "БИО-ҲОҶАТХОНА", category: "Санитарӣ", description: "", x: 79.3, y: 11.7, color: "#e43f93", icon: "wc", link: "", visible: true },
+        { id: "15", numberLabel: "15", title: "МАЙДОНЧАИ ВАРЗИШӢ", label: "ВАРЗИШӢ", category: "Варзиш", description: "", x: 49.5, y: 50.9, color: "#e43f93", icon: "sports", link: "", visible: true },
+        { id: "16", numberLabel: "16", title: "БАРОМАД", label: "БАРОМАД", category: "Навигация", description: "", x: 12, y: 86.4, color: "#e43f93", icon: "exit", link: "", visible: true }
       ]
     };
 
+    const POINT_ICON_SET = [
+      { id: "pin", label: "Локация", ion: "location" },
+      { id: "entrance", label: "Вход", ion: "log-in" },
+      { id: "stage", label: "Сцена", ion: "musical-notes" },
+      { id: "food", label: "Еда", ion: "restaurant" },
+      { id: "drink", label: "Напитки", ion: "wine" },
+      { id: "wc", label: "WC", ion: "male-female" },
+      { id: "firstaid", label: "Медпункт", ion: "medical" },
+      { id: "info", label: "Инфо", ion: "information-circle" },
+      { id: "merch", label: "Мерч", ion: "bag-handle" },
+      { id: "parking", label: "Парковка", ion: "car-sport" },
+      { id: "security", label: "Охрана", ion: "shield-checkmark" },
+      { id: "charging", label: "Зарядка", ion: "battery-charging" },
+      { id: "photo", label: "Фото", ion: "camera" },
+      { id: "transport", label: "Транспорт", ion: "bus" },
+      { id: "ticket", label: "Билеты", ion: "ticket" },
+      { id: "lounge", label: "Лаунж", ion: "cafe" },
+      { id: "music", label: "Музыка", ion: "musical-note" },
+      { id: "exit", label: "Выход", ion: "log-out" },
+      { id: "print", label: "Печать фото", ion: "print" },
+      { id: "flowers", label: "Цветы", ion: "flower" },
+      { id: "kids", label: "Детская зона", ion: "happy" },
+      { id: "theater", label: "Театр", ion: "film" },
+      { id: "crafts", label: "Народные ремёсла", ion: "diamond" },
+      { id: "games", label: "Игры", ion: "game-controller" },
+      { id: "family", label: "Семейная зона", ion: "people" },
+      { id: "embassy", label: "Стенды", ion: "business" },
+      { id: "creative", label: "Творчество", ion: "color-palette" },
+      { id: "emergency", label: "Экстренная помощь", ion: "medkit" },
+      { id: "fire", label: "Пожарная служба", ion: "flame" },
+      { id: "sports", label: "Спорт", ion: "football" }
+    ];
+    const POINT_ICON_LOOKUP = Object.fromEntries(POINT_ICON_SET.map((icon) => [icon.id, icon]));
+        const LOCAL_ADMIN_ZONE_POINTS = [
+      { id: "1", numberLabel: "1", title: "ДАРОМАД", label: "НУҚТАИ ФУРӮШИ ЧИПТАҲО", category: "Навигация", description: "", x: 14, y: 24, color: "#e43f93", icon: "ticket", link: "", visible: true },
+      { id: "2", numberLabel: "2", title: "НУҚТАИ ЧОПИ РАСМҲО", label: "ЧОПИ РАСМҲО", category: "Фото", description: "", x: 54, y: 24, color: "#e43f93", icon: "print", link: "", visible: true },
+      { id: "3", numberLabel: "3", title: "САҲНА", label: "САҲНА", category: "Саҳна", description: "", x: 15, y: 35, color: "#e43f93", icon: "stage", link: "", visible: true },
+      { id: "4", numberLabel: "4", title: "МАЙДОНЧАИ НАМОИШИ ГУЛҲО", label: "НАМОИШИ ГУЛҲО", category: "Гулҳо", description: "", x: 55, y: 35, color: "#e43f93", icon: "flowers", link: "", visible: true },
+      { id: "5", numberLabel: "5", title: "МАЙДОНЧАИ БАРОИ КӮДАКОН", label: "БАРОИ КӮДАКОН", category: "Кӯдакон", description: "", x: 15, y: 46, color: "#e43f93", icon: "kids", link: "", visible: true },
+      { id: "6", numberLabel: "6", title: "НАМОЯНДАИ РАЁСАТИ ФАРҲАНГИ МАҚОМОТИ ИҶРОИЯИ ҲОКИМИЯТИ ДАВЛАТИИ ШАҲРИ ДУШАНБЕ", label: "РАЁСАТИ ФАРҲАНГ", category: "Фарҳанг", description: "", x: 55, y: 46, color: "#e43f93", icon: "theater", link: "", visible: true },
+      { id: "7", numberLabel: "7", title: "МАЙДОНЧАИ ҲУНАРҲОИ МАРДУМӢ", label: "ҲУНАРҲОИ МАРДУМӢ", category: "Ҳунарҳо", description: "", x: 15, y: 57, color: "#e43f93", icon: "crafts", link: "", visible: true },
+      { id: "8", numberLabel: "8", title: "МАЙДОНЧАИ ҒИЗО ВА НӮШОКИҲО", label: "ҒИЗО ВА НӮШОКИҲО", category: "Ғизо", description: "", x: 55, y: 57, color: "#e43f93", icon: "food", link: "", visible: true },
+      { id: "9", numberLabel: "9", title: "МАЙДОНЧАИ БОЗӢ", label: "БОЗӢ", category: "Бозӣ", description: "", x: 15, y: 68, color: "#e43f93", icon: "games", link: "", visible: true },
+      { id: "10", numberLabel: "10", title: "ФАЪОЛИЯТҲОИ ОИЛАВӢ", label: "ОИЛАВӢ", category: "Оила", description: "", x: 55, y: 68, color: "#e43f93", icon: "family", link: "", visible: true },
+      { id: "11", numberLabel: "11", title: "СТЕНДҲО АЗ САФАРАТҲО", label: "АЗ САФАРАТҲО", category: "Стендҳо", description: "", x: 15, y: 79, color: "#e43f93", icon: "embassy", link: "", visible: true },
+      { id: "12", numberLabel: "12", title: "МИНТАҚАИ ЭҶОДӢ", label: "ЭҶОДӢ", category: "Эҷодӣ", description: "", x: 55, y: 79, color: "#e43f93", icon: "creative", link: "", visible: true },
+      { id: "13", numberLabel: "13", title: "ЁРИИ ТАЪҶИЛИИ ТИББӢ / ХАДАМОТИ ОТАШНИШОНӢ", label: "ТИББӢ / ОТАШНИШОНӢ", category: "Хадамоти фаврӣ", description: "", x: 15, y: 90, color: "#e43f93", icon: "emergency", link: "", visible: true },
+      { id: "14", numberLabel: "14", title: "БИО-ҲОҶАТХОНА", label: "БИО-ҲОҶАТХОНА", category: "Санитарӣ", description: "", x: 55, y: 90, color: "#e43f93", icon: "wc", link: "", visible: true },
+      { id: "15", numberLabel: "15", title: "МАЙДОНЧАИ ВАРЗИШӢ", label: "ВАРЗИШӢ", category: "Варзиш", description: "", x: 15, y: 97, color: "#e43f93", icon: "sports", link: "", visible: true },
+      { id: "16", numberLabel: "16", title: "БАРОМАД", label: "БАРОМАД", category: "Навигация", description: "", x: 55, y: 97, color: "#e43f93", icon: "exit", link: "", visible: true }
+    ];
     const state = {
       selectedPointId: null,
       currentZoom: 1,
       addMode: false,
-      moveMode: false,
+      moveMode: LOCAL_ADMIN_STUDIO,
       dragging: false,
       draggedPointId: null,
       dragMoved: false,
-      tab: "general",
+      tab: LOCAL_ADMIN_STUDIO ? "points" : "general",
       visitorSearch: "",
       adminSearch: "",
       activeCategory: "all",
-      adminUnlocked: false,
+      adminUnlocked: LOCAL_ADMIN_STUDIO,
       secretTapCount: 0,
       secretTapTimer: null,
       contextPoint: null,
@@ -469,12 +652,26 @@
     };
 
     const CONFIG = loadConfig();
+    CONFIG.backgroundImage = FIXED_MAP_ASSET;
+    if (LOCAL_ADMIN_STUDIO && LOCAL_ADMIN_BACKGROUND_IMAGE) {
+      CONFIG.backgroundImage = LOCAL_ADMIN_BACKGROUND_IMAGE;
+      try {
+        if (localStorage.getItem(LOCAL_ADMIN_ZONE_SEED_STORAGE_KEY) !== LOCAL_ADMIN_ZONE_SEED_VERSION) {
+          CONFIG.points = LOCAL_ADMIN_ZONE_POINTS.map((point) => ({ ...point }));
+          localStorage.setItem(LOCAL_ADMIN_ZONE_SEED_STORAGE_KEY, LOCAL_ADMIN_ZONE_SEED_VERSION);
+        }
+      } catch (error) {
+        CONFIG.points = LOCAL_ADMIN_ZONE_POINTS.map((point) => ({ ...point }));
+      }
+    }
     state.selectedPointId = CONFIG.points[0]?.id || null;
     state.currentZoom = clamp(Number(CONFIG.initialZoom ?? 1), Number(CONFIG.minZoom ?? 0.8), Number(CONFIG.maxZoom ?? 2.4));
 
     const $ = (id) => document.getElementById(id);
     const refs = {
       preloader: $("preloader"),
+      welcomeModal: $("welcomeModal"),
+      welcomeEnter: $("welcomeEnter"),
       logoSlot: $("logoSlot"),
       logoImage: $("logoImage"),
       heroTitle: $("heroTitle"),
@@ -545,6 +742,8 @@
       pointLabelInput: $("pointLabelInput"),
       pointCategoryInput: $("pointCategoryInput"),
       pointColorInput: $("pointColorInput"),
+      pointIconGrid: $("pointIconGrid"),
+      pointIconHint: $("pointIconHint"),
       pointXInput: $("pointXInput"),
       pointYInput: $("pointYInput"),
       pointLinkInput: $("pointLinkInput"),
@@ -592,6 +791,65 @@
       const num = Number.parseInt(full || "f97316", 16);
       return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
     }
+    function guessPointIcon(source) {
+      const hay = [source?.icon, source?.title, source?.label, source?.category, source?.description].join(" ").toLowerCase();
+      if (/(даромад|вход|entry|entrance|gate|door)/.test(hay)) return "entrance";
+      if (/(баромад|выход|exit)/.test(hay)) return "exit";
+      if (/(чипта|ticket|билет|касс)/.test(hay)) return "ticket";
+      if (/(чоп|расм|print|printer|photo print)/.test(hay)) return "print";
+      if (/(саҳна|сахна|сцен|stage|concert|show)/.test(hay)) return "stage";
+      if (/(гул|flower|floral)/.test(hay)) return "flowers";
+      if (/(кӯдак|куд|детск|kids|child)/.test(hay)) return "kids";
+      if (/(театр|theater|drama)/.test(hay)) return "theater";
+      if (/(ҳунар|ремес|craft|folk art|handmade)/.test(hay)) return "crafts";
+      if (/(ғизо|гизо|ед|food|фуд|cafe|кафе|kitchen|кухн)/.test(hay)) return "food";
+      if (/(нӯшок|нушок|бар|drink|напит|water|coffee|кофе|tea|чай)/.test(hay)) return "drink";
+      if (/(бозӣ|бози|игр|game|play)/.test(hay)) return "games";
+      if (/(оилав|family)/.test(hay)) return "family";
+      if (/(сафорат|посоль|embassy|stand)/.test(hay)) return "embassy";
+      if (/(эҷод|эчод|творч|creative|art zone|palette)/.test(hay)) return "creative";
+      if (/(таъҷил|тачжил|тибб|мед|aid|help|doctor|аптек)/.test(hay)) return "emergency";
+      if (/(оташ|fire|пожар)/.test(hay)) return "fire";
+      if (/(wc|ҳоҷат|хочат|туал|restroom|bio)/.test(hay)) return "wc";
+      if (/(варзиш|спорт|sport|ball)/.test(hay)) return "sports";
+      if (/(info|инфо|справ|регистрац)/.test(hay)) return "info";
+      if (/(merch|shop|сувен|магаз|ярмарк)/.test(hay)) return "merch";
+      if (/(parking|парков|car)/.test(hay)) return "parking";
+      if (/(security|охра|guard|police|полици)/.test(hay)) return "security";
+      if (/(charge|заряд|power)/.test(hay)) return "charging";
+      if (/(photo|фото|camera)/.test(hay)) return "photo";
+      if (/(bus|шаттл|трансфер|transport|автобус)/.test(hay)) return "transport";
+      if (/(lounge|лаунж|vip|rest)/.test(hay)) return "lounge";
+      if (/(music|музык|dj|dance|танц)/.test(hay)) return "music";
+      return "pin";
+    }
+    function normalizeIcon(value, source = null) {
+      const iconId = String(value || "").trim().toLowerCase();
+      if (POINT_ICON_LOOKUP[iconId]) return iconId;
+      return guessPointIcon(source || {});
+    }
+    function iconSvg(iconId, className = "point-icon") {
+      const iconName = POINT_ICON_LOOKUP[normalizeIcon(iconId)]?.ion || POINT_ICON_LOOKUP.pin.ion;
+      return `<ion-icon class="${className}" name="${iconName}" aria-hidden="true"></ion-icon>`;
+    }
+    function iconLabel(iconId) {
+      return POINT_ICON_LOOKUP[normalizeIcon(iconId)]?.label || POINT_ICON_LOOKUP.pin.label;
+    }
+    function parsePointNumberLabel(value) {
+      const match = String(value || "").trim().match(/^(\d+)(?:\.(\d+))?$/);
+      if (!match) return null;
+      return {
+        major: Number.parseInt(match[1], 10) || 0,
+        minor: match[2] ? (Number.parseInt(match[2], 10) || 0) : null
+      };
+    }
+    function nextPointNumberLabel(points) {
+      const maxMajor = points.reduce((max, point, index) => {
+        const parsed = parsePointNumberLabel(point?.numberLabel ?? index + 1);
+        return parsed ? Math.max(max, parsed.major) : max;
+      }, 0);
+      return String(maxMajor + 1);
+    }
     function nextId(points) {
       return String(points.reduce((max, point) => Math.max(max, Number.parseInt(point.id, 10) || 0), 0) + 1);
     }
@@ -599,6 +857,7 @@
       const item = point && typeof point === "object" ? point : {};
       return {
         id: String(item.id ?? index + 1),
+        numberLabel: String(item.numberLabel ?? item.markerNumber ?? index + 1),
         title: String(item.title || `Точка ${index + 1}`),
         label: String(item.label || item.title || `Точка ${index + 1}`),
         category: String(item.category || "Общее"),
@@ -606,6 +865,7 @@
         x: round(clamp(Number(item.x ?? 50), 0, 100)),
         y: round(clamp(Number(item.y ?? 50), 0, 100)),
         color: isHex(item.color) ? item.color : DEFAULT_CONFIG.accentColor,
+        icon: normalizeIcon(item.icon, item),
         link: String(item.link || ""),
         visible: item.visible !== false
       };
@@ -620,7 +880,7 @@
         dateLabel: String(src.dateLabel || DEFAULT_CONFIG.dateLabel),
         accentColor: isHex(src.accentColor) ? src.accentColor : DEFAULT_CONFIG.accentColor,
         logoImage: String(src.logoImage || ""),
-        backgroundImage: String(src.backgroundImage || ""),
+        backgroundImage: String(src.backgroundImage || FIXED_MAP_ASSET),
         initialZoom: clamp(Number(src.initialZoom ?? DEFAULT_CONFIG.initialZoom), 0.6, 3),
         minZoom: clamp(Number(src.minZoom ?? DEFAULT_CONFIG.minZoom), 0.5, 2.5),
         maxZoom: clamp(Number(src.maxZoom ?? DEFAULT_CONFIG.maxZoom), 1, 5),
@@ -808,10 +1068,9 @@
     }
     function getSelectedPoint() { return CONFIG.points.find((point) => point.id === state.selectedPointId) || null; }
     function setDrawerOpen(open) {
-      if (open && !state.adminUnlocked) return;
-      refs.drawer.classList.toggle("active", open);
-      refs.overlay.classList.toggle("active", open);
-      document.body.classList.toggle("drawer-open", open);
+      refs.drawer.classList.remove("active");
+      refs.overlay.classList.remove("active");
+      document.body.classList.remove("drawer-open");
     }
     function setTab(tab) {
       state.tab = tab;
@@ -830,31 +1089,25 @@
       });
     }
     function updateMode() {
-      refs.badgeMode.textContent = state.addMode ? "Добавление" : state.moveMode ? "Перемещение" : "Просмотр";
-      refs.toggleAdd.textContent = state.addMode ? "Остановить добавление" : "Добавить по клику";
-      refs.toggleMove.textContent = state.moveMode ? "Закончить расстановку" : "Режим расстановки";
-      refs.addHint.classList.toggle("visible", state.addMode);
-      refs.layer.classList.toggle("add", state.addMode);
+      refs.badgeMode.textContent = "Интерактивная";
+      refs.toggleAdd.textContent = "Добавить по клику";
+      refs.toggleMove.textContent = "Режим расстановки";
+      refs.addHint.classList.remove("visible");
+      refs.layer.classList.remove("add");
       refs.zoomReset.textContent = `${Math.round(state.currentZoom * 100)}%`;
     }
     function updateStorage() {
       refs.badgeSave.textContent = state.savedLabel;
-      refs.storageText.textContent = state.adminUnlocked
-        ? (state.storageWarning || state.realtimeMessage || "Режим администратора активен. Изменения сохраняются локально, и конфиг можно скачать в JSON.")
-        : "Нажми на точку, чтобы увидеть её описание и детали.";
-      refs.jsonStatus.textContent = state.storageWarning || state.realtimeMessage || "Если позже пришлёшь логотип и саму карту, их можно будет просто подставить сюда или через загрузку выше.";
+      refs.storageText.textContent = "Нажми на точку, чтобы увидеть её описание и детали.";
+      refs.jsonStatus.textContent = "Финальная карта работает в публичном режиме без панели редактирования.";
       if (refs.realtimeBadge) {
-        refs.realtimeBadge.textContent = !liveSync.enabled
-          ? "Live sync выключен"
-          : (state.realtimeConnected
-            ? (state.realtimeAuthReady ? "Live sync активен" : "Live sync подключён")
-            : "Live sync не подключён");
+        refs.realtimeBadge.textContent = "Публичный режим";
       }
       if (refs.realtimeStatusText) {
-        refs.realtimeStatusText.textContent = state.realtimeMessage;
+        refs.realtimeStatusText.textContent = "Карта доступна только для просмотра и навигации.";
       }
       if (refs.placementStatus) {
-        refs.placementStatus.textContent = `Черновик сохраняется на этом устройстве автоматически. ${state.savedLabel}. Левой кнопкой можно двигать точки мышкой, правой кнопкой по карте открыть создание точки. Когда закончишь, нажми «Скачать итоговый JSON» и пришли мне его, я зафиксирую карту навсегда.`;
+        refs.placementStatus.textContent = "Редактирование отключено: карта переведена в финальный режим для посетителей.";
       }
     }
     function hideContextMenu() {
@@ -893,41 +1146,30 @@
       showContextMenu(event);
     }
     function updateAdminVisibility() {
+      state.adminUnlocked = false;
+      state.addMode = false;
+      state.moveMode = false;
       refs.openDrawer.hidden = true;
       refs.floatAdmin.hidden = true;
       refs.detailEdit.hidden = true;
       refs.savePill.hidden = true;
-      refs.publicNote.textContent = "Выбирай точки на карте, смотри зоны фестиваля и быстро находи нужные места.";
+      refs.closeDrawer.hidden = true;
+      refs.publicNote.textContent = "Нажми на точку на карте или выбери локацию в списке слева, чтобы быстро открыть детали.";
       refs.toolbarSubtitle.textContent = CONFIG.subtitle || DEFAULT_CONFIG.subtitle;
     }
     function requestAdminAccess() {
-      if (state.adminUnlocked) {
+      return;
+    }
+    async function lockAdminAccess() {
+      if (LOCAL_ADMIN_STUDIO) {
+        state.adminUnlocked = true;
         state.addMode = false;
         state.moveMode = true;
         setTab("points");
         setDrawerOpen(true);
-        void initRealtime();
         renderAll();
         return;
       }
-      const password = window.prompt("Введите пароль администратора");
-      if (password === null) return;
-      if (password !== ADMIN_PASSWORD_PLACEHOLDER) {
-        window.alert("Неверный пароль.");
-        return;
-      }
-      state.adminUnlocked = true;
-      state.addMode = false;
-      state.moveMode = true;
-      updateAdminVisibility();
-      updateStorage();
-      setTab("points");
-      setDrawerOpen(true);
-      void initRealtime();
-      renderAll();
-      window.alert("Режим администратора активирован.");
-    }
-    async function lockAdminAccess() {
       state.adminUnlocked = false;
       state.addMode = false;
       state.moveMode = false;
@@ -944,15 +1186,7 @@
       renderAll();
     }
     function handleSecretLogoTap() {
-      state.secretTapCount += 1;
-      window.clearTimeout(state.secretTapTimer);
-      state.secretTapTimer = window.setTimeout(() => {
-        state.secretTapCount = 0;
-      }, 1200);
-      if (state.secretTapCount < 3) return;
-      state.secretTapCount = 0;
-      window.clearTimeout(state.secretTapTimer);
-      requestAdminAccess();
+      return;
     }
     function syncGeneralForm() {
       refs.mapTitleInput.value = CONFIG.title || "";
@@ -963,12 +1197,34 @@
       refs.logoUrlInput.value = CONFIG.logoImage || "";
       refs.mapUrlInput.value = CONFIG.backgroundImage || "";
     }
+    function renderPointIconPicker(selectedIconId, disabled = false) {
+      const activeIconId = normalizeIcon(selectedIconId);
+      refs.pointIconGrid.dataset.value = activeIconId;
+      refs.pointIconGrid.innerHTML = "";
+      POINT_ICON_SET.forEach((icon) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `icon-choice${icon.id === activeIconId ? " active" : ""}`;
+        button.disabled = disabled;
+        button.innerHTML = `${iconSvg(icon.id)}<span>${escapeHtml(icon.label)}</span>`;
+        button.addEventListener("click", () => {
+          if (button.disabled) return;
+          renderPointIconPicker(icon.id, false);
+        });
+        refs.pointIconGrid.appendChild(button);
+      });
+      refs.pointIconHint.textContent = disabled
+        ? "Сначала выбери точку, потом назначь ей иконку."
+        : `Выбрана иконка: ${iconLabel(activeIconId)}. Нажми "Применить точку", чтобы сохранить.`;
+    }
     function syncPointForm() {
       const point = getSelectedPoint();
       if (!point) {
         refs.pointTitleInput.value = ""; refs.pointLabelInput.value = ""; refs.pointCategoryInput.value = "";
         refs.pointColorInput.value = DEFAULT_CONFIG.accentColor; refs.pointXInput.value = ""; refs.pointYInput.value = "";
-        refs.pointLinkInput.value = ""; refs.pointDescriptionInput.value = ""; refs.pointVisibleInput.checked = true; return;
+        refs.pointLinkInput.value = ""; refs.pointDescriptionInput.value = ""; refs.pointVisibleInput.checked = true;
+        renderPointIconPicker("pin", true);
+        return;
       }
       refs.pointTitleInput.value = point.title || "";
       refs.pointLabelInput.value = point.label || "";
@@ -979,6 +1235,7 @@
       refs.pointLinkInput.value = point.link || "";
       refs.pointDescriptionInput.value = point.description || "";
       refs.pointVisibleInput.checked = point.visible !== false;
+      renderPointIconPicker(point.icon, false);
     }
     function updateJson(force = false) {
       if (!force && document.activeElement === refs.configEditor) return;
@@ -992,7 +1249,7 @@
       const head = document.createElement("div");
       head.className = "list-head";
       const title = document.createElement("strong");
-      title.textContent = point.title || "Без названия";
+      title.textContent = `${point.numberLabel || "?"}. ${point.title || "Без названия"}`;
       const dot = document.createElement("span");
       dot.className = "dot";
       dot.style.background = point.color || DEFAULT_CONFIG.accentColor;
@@ -1042,15 +1299,6 @@
     }
     function renderAdminList() {
       refs.adminList.innerHTML = "";
-      const points = filterPoints(CONFIG.points, state.adminSearch);
-      if (!points.length) {
-        const empty = document.createElement("div");
-        empty.className = "empty";
-        empty.textContent = "Нет точек под этот фильтр. Можно создать новую прямо из центра карты.";
-        refs.adminList.appendChild(empty);
-        return;
-      }
-      points.forEach((point) => refs.adminList.appendChild(createListCard(point, point.id === state.selectedPointId, () => { state.selectedPointId = point.id; setTab("points"); syncPointForm(); renderAll(); requestAnimationFrame(() => focusPoint(point.id)); })));
     }
     function renderBranding() {
       document.title = `${CONFIG.title} · Festival Map`;
@@ -1085,7 +1333,7 @@
       updateCanvasSize();
     }
     function createPointNode(point) {
-      const pointNumber = CONFIG.points.findIndex((item) => item.id === point.id) + 1;
+      const pointNumber = point.numberLabel || String(CONFIG.points.findIndex((item) => item.id === point.id) + 1);
       const button = document.createElement("button");
       button.type = "button";
       button.className = `point${point.id === state.selectedPointId ? " selected" : ""}${point.visible ? "" : " dim"}`;
@@ -1096,11 +1344,7 @@
       button.innerHTML = `
         <span class="point-pin">
           <span class="point-index">${pointNumber}</span>
-          <svg class="point-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M8 3.5 16.5 2v20L8 20.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-            <path d="M10 7.25h3.75M10 11h3.75M10 14.75h2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <circle cx="13.5" cy="12.2" r="0.9" fill="currentColor"/>
-          </svg>
+          ${iconSvg(point.icon)}
         </span>
       `;
       button.addEventListener("pointerdown", (event) => {
@@ -1149,20 +1393,25 @@
         refs.detailText.textContent = "Здесь будет появляться информация о локации.";
         refs.detailLink.hidden = true;
         refs.selectionBadge.textContent = "Точка не выбрана";
+        refs.selectionBadge.hidden = true;
         return;
       }
       refs.detail.classList.remove("is-hidden");
       refs.detailCategory.textContent = point.category || "Общее";
       refs.detailTitle.textContent = point.title || "Без названия";
       refs.detailText.textContent = point.description || "Описание пока не заполнено.";
-      refs.selectionBadge.textContent = `${point.label || point.title} · ${point.x}% / ${point.y}%`;
+      refs.selectionBadge.textContent = `${point.numberLabel || "?"} · ${point.label || point.title} · ${point.x}% / ${point.y}%`;
+      refs.selectionBadge.hidden = false;
+      const iconMeta = document.createElement("span");
+      iconMeta.className = "badge";
+      iconMeta.innerHTML = `${iconSvg(point.icon, "detail-badge-icon")}<strong>${escapeHtml(iconLabel(point.icon))}</strong>`;
       const visibility = document.createElement("span");
       visibility.className = `badge${point.visible ? "" : " hidden"}`;
       visibility.textContent = point.visible ? "Видна гостям" : "Скрыта";
       const coords = document.createElement("span");
       coords.className = "badge";
       coords.textContent = `X ${point.x}% · Y ${point.y}%`;
-      refs.detailMeta.append(visibility, coords);
+      refs.detailMeta.append(iconMeta, visibility, coords);
       if (point.link) {
         refs.detailLink.hidden = false;
         refs.detailLink.href = point.link;
@@ -1172,14 +1421,17 @@
     }
     function updateCanvasSize() {
       const viewportWidth = Math.max(refs.viewport.clientWidth || 0, 320);
-      const baseWidth = Math.min(1320, Math.max(320, viewportWidth - 48));
+      const mobile = window.matchMedia("(max-width: 760px)").matches;
+      const baseWidth = mobile
+        ? Math.max(320, viewportWidth)
+        : Math.min(1320, Math.max(320, viewportWidth - 48));
       refs.canvas.style.width = `${baseWidth}px`;
       requestAnimationFrame(() => {
         const width = refs.canvas.offsetWidth || baseWidth;
         const height = refs.canvas.offsetHeight || Math.round(baseWidth * .625);
         refs.canvas.style.transform = `scale(${state.currentZoom})`;
         refs.scaleStage.style.width = `${Math.round(width * state.currentZoom)}px`;
-        refs.scaleStage.style.height = `${Math.round(height * state.currentZoom)}px`;
+        refs.scaleStage.style.height = mobile ? "auto" : `${Math.round(height * state.currentZoom)}px`;
       });
     }
     function renderAll() {
@@ -1225,6 +1477,7 @@
     function createPoint(x = 50, y = 50) {
       const point = normalizePoint({
         id: nextId(CONFIG.points),
+        numberLabel: nextPointNumberLabel(CONFIG.points),
         title: `Новая точка ${CONFIG.points.length + 1}`,
         label: `Точка ${CONFIG.points.length + 1}`,
         category: "Общее",
@@ -1232,6 +1485,7 @@
         x,
         y,
         color: CONFIG.accentColor || DEFAULT_CONFIG.accentColor,
+        icon: "pin",
         link: "",
         visible: true
       }, CONFIG.points.length);
@@ -1261,6 +1515,7 @@
       point.label = refs.pointLabelInput.value.trim() || point.title;
       point.category = refs.pointCategoryInput.value.trim() || "Общее";
       point.color = isHex(refs.pointColorInput.value) ? refs.pointColorInput.value : CONFIG.accentColor;
+      point.icon = normalizeIcon(refs.pointIconGrid.dataset.value, point);
       point.x = round(clamp(Number(refs.pointXInput.value || point.x), 0, 100));
       point.y = round(clamp(Number(refs.pointYInput.value || point.y), 0, 100));
       point.link = refs.pointLinkInput.value.trim();
@@ -1273,7 +1528,7 @@
     function duplicatePoint() {
       const point = getSelectedPoint();
       if (!point) return;
-      const copy = normalizePoint({ ...point, id: nextId(CONFIG.points), title: `${point.title} копия`, x: clamp(point.x + 3, 0, 100), y: clamp(point.y + 3, 0, 100) }, CONFIG.points.length);
+      const copy = normalizePoint({ ...point, id: nextId(CONFIG.points), numberLabel: nextPointNumberLabel(CONFIG.points), title: `${point.title} копия`, x: clamp(point.x + 3, 0, 100), y: clamp(point.y + 3, 0, 100) }, CONFIG.points.length);
       CONFIG.points.push(copy);
       state.selectedPointId = copy.id;
       persistLocal();
@@ -1407,8 +1662,14 @@
 
     refs.openDrawer.addEventListener("click", () => setDrawerOpen(true));
     refs.floatAdmin.addEventListener("click", () => setDrawerOpen(true));
-    refs.closeDrawer.addEventListener("click", lockAdminAccess);
-    refs.overlay.addEventListener("click", lockAdminAccess);
+    refs.closeDrawer.addEventListener("click", () => {
+      if (LOCAL_ADMIN_STUDIO) return;
+      void lockAdminAccess();
+    });
+    refs.overlay.addEventListener("click", () => {
+      if (LOCAL_ADMIN_STUDIO) return;
+      void lockAdminAccess();
+    });
     refs.tabs.forEach((tab) => tab.addEventListener("click", () => setTab(tab.dataset.tab || "general")));
     refs.logoSlot.addEventListener("pointerup", handleSecretLogoTap);
 
@@ -1540,14 +1801,35 @@
       updateCanvasSize();
     });
 
-    window.addEventListener("resize", updateCanvasSize);
-    window.addEventListener("load", () => {
-      setTimeout(() => refs.preloader.classList.add("hidden"), 550);
+    function openWelcomeModal() {
+      refs.welcomeModal?.classList.add("active");
+      refs.welcomeModal?.setAttribute("aria-hidden", "false");
+    }
+
+    function closeWelcomeModal() {
+      refs.welcomeModal?.classList.remove("active");
+      refs.welcomeModal?.setAttribute("aria-hidden", "true");
+    }
+
+    refs.welcomeEnter?.addEventListener("click", closeWelcomeModal);
+    refs.welcomeModal?.addEventListener("click", (event) => {
+      if (event.target === refs.welcomeModal) closeWelcomeModal();
     });
 
+    window.addEventListener("resize", updateCanvasSize);
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        refs.preloader.classList.add("hidden");
+        openWelcomeModal();
+      }, 1500);
+    });
+
+    document.body.classList.remove("local-admin-studio");
+    state.adminUnlocked = false;
+    state.moveMode = false;
+    state.addMode = false;
     persistLocal();
     renderAll();
-    void initRealtime();
   </script>
 </body>
 </html>

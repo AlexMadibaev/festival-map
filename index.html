@@ -4,13 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Dushanbe Navruz Fest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap" as="style" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap" /></noscript>
+  <link rel="preload" as="image" href="./assets/festival-map-base.webp" fetchpriority="high" />
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png" />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="icon" type="image/png" sizes="96x96" href="./assets/favicon-96x96.png" />
   <link rel="shortcut icon" href="./assets/favicon.ico" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap");
     :root {
       --bg:#fff8f3; --panel:rgba(255,255,255,.92); --soft:#fff4ee; --soft-2:#fffaf7;
       --line:rgba(226,116,169,.16); --text:#3f2140; --muted:#8b667c; --accent:#e43f93; --accent-soft:rgba(228,63,147,.12);
@@ -290,14 +296,14 @@
 <body>
   <div class="preloader" id="preloader">
     <div class="preloader-logo-wrap" aria-hidden="true">
-      <img class="preloader-logo" src="./assets/navruz-logo.svg" alt="Navruz logo" />
+      <img class="preloader-logo" src="./assets/navruz-logo.svg" alt="Navruz logo" width="1054" height="599" />
     </div>
     <div class="hint">Подготавливаем интерактивную карту...</div>
   </div>
 
   <div class="welcome-modal" id="welcomeModal" aria-hidden="true">
     <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
-      <img class="welcome-logo" src="./assets/navruz-logo.svg" alt="Navruz Fest logo" />
+      <img class="welcome-logo" src="./assets/navruz-logo.svg" alt="Navruz Fest logo" width="1054" height="599" />
       <h1 class="welcome-title" id="welcomeTitle">Добро пожаловать на Dushanbe Navruz Fest</h1>
       <p class="welcome-text">Откройте интерактивную карту фестиваля, чтобы быстро находить сцены, зоны активностей, сервисные точки и ключевые локации площадки.</p>
       <div class="welcome-actions">
@@ -376,7 +382,7 @@
                     <p class="hint">Пока можно работать на демо-схеме, а потом заменить её через URL или загрузкой с устройства.</p>
                   </div>
                 </div>
-                <img id="mapImage" alt="Интерактивная карта площадки" hidden />
+                <img id="mapImage" alt="Интерактивная карта площадки" src="./assets/festival-map-base.webp" width="2299" height="1561" decoding="async" fetchpriority="high" />
                 <div class="layer" id="layer"></div>
               </div>
             </div>
@@ -547,7 +553,7 @@
 
   <script>
     const STORAGE_KEY = "festival-map-public-v2";
-    const FIXED_MAP_ASSET = "./assets/festival-map-base.png";
+    const FIXED_MAP_ASSET = "./assets/festival-map-base.webp";
     const ADMIN_PASSWORD_PLACEHOLDER = "";
     const LOCAL_ADMIN_STUDIO = false;
     const LOCAL_ADMIN_BACKGROUND_IMAGE = "";
@@ -1859,6 +1865,18 @@
       refs.mapImage.hidden = true;
       updateCanvasSize();
     });
+    if (refs.mapImage.complete) {
+      if (refs.mapImage.naturalWidth > 0) {
+        state.mapReady = true;
+        refs.canvas.classList.remove("empty");
+        refs.mapImage.hidden = false;
+      } else {
+        state.mapReady = false;
+        refs.canvas.classList.add("empty");
+        refs.mapImage.hidden = true;
+      }
+      updateCanvasSize();
+    }
 
     function openWelcomeModal() {
       refs.welcomeModal?.classList.add("active");
